@@ -1,0 +1,79 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.0'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'ru.minibobr'
+version = '1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = '17'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    
+    // JOOQ
+    implementation 'org.springframework.boot:spring-boot-starter-jooq'
+    implementation 'org.jooq:jooq:3.18.7'
+    
+    // Database
+    runtimeOnly 'org.postgresql:postgresql:42.7.7'
+    
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    
+    // JSON
+    implementation 'com.google.code.gson:gson:2.10.1'
+    
+    // Password hashing
+    implementation 'org.springframework.security:spring-security-crypto'
+    
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+}
+
+// JOOQ classes
+/*
+jooq {
+    configuration {
+        jdbc {
+            driver = 'org.postgresql.Driver'
+            url = System.getenv('POSTGRES_URL') ?: 'jdbc:postgresql://localhost:5432/postgres'
+            user = System.getenv('POSTGRES_USER') ?: 'admin'
+            password = System.getenv('POSTGRES_PASSWORD') ?: 'admin'
+        }
+        generator {
+            database {
+                name = 'org.jooq.meta.postgres.PostgresDatabase'
+                inputSchema = 'public'
+            }
+            target {
+                packageName = 'ru.minibobr.jooq'
+                directory = 'src/main/java'
+            }
+        }
+    }
+}
+*/
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

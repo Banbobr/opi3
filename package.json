@@ -1,0 +1,19 @@
+{
+  "name": "web4-frontend",
+  "version": "1.0.0",
+  "description": "Vue.js frontend for web4",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite"
+  },
+  "dependencies": {
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.5",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.4.0",
+    "vite": "^5.0.0"
+  }
+}
+
