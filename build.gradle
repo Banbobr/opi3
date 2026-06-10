@@ -4,17 +4,41 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.4'
 }
 
+def buildProps = new Properties()
+file('build.properties').withInputStream { buildProps.load(it) }
+
 group = 'ru.minibobr'
-version = '1.0-SNAPSHOT'
+version = buildProps.getProperty('version', '1.0-SNAPSHOT')
+
+def mainClassName = buildProps.getProperty('mainClass')
+def trackedClassesList = buildProps.getProperty('trackedClasses', '')
+        .split(',')
+        .collect { it.trim() }
+        .findAll { !it.isEmpty() }
 
 java {
-    sourceCompatibility = '17'
+    sourceCompatibility = JavaVersion.VERSION_17
+}
+
+sourceSets {
+    functionalTest {
+        java {
+            srcDir 'src/functionalTest/java'
+        }
+        resources {
+            srcDir 'src/functionalTest/resources'
+        }
+        compileClasspath += sourceSets.main.output + sourceSets.test.output
+        runtimeClasspath += output + compileClasspath
+    }
 }
 
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+    functionalTestImplementation.extendsFrom testImplementation
+    functionalTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 repositories {
@@ -22,58 +46,174 @@ repositories {
 }
 
 dependencies {
-    // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    
-    // JOOQ
     implementation 'org.springframework.boot:spring-boot-starter-jooq'
     implementation 'org.jooq:jooq:3.18.7'
-    
-    // Database
     runtimeOnly 'org.postgresql:postgresql:42.7.7'
-    
-    // Lombok
     compileOnly 'org.projectlombok:lombok:1.18.30'
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
-    
-    // JSON
     implementation 'com.google.code.gson:gson:2.10.1'
-    
-    // Password hashing
     implementation 'org.springframework.security:spring-security-crypto'
-    
-    // Test
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+
+    functionalTestImplementation 'com.microsoft.playwright:playwright:1.41.2'
+    functionalTestImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    functionalTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+    functionalTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-// JOOQ classes
-/*
-jooq {
-    configuration {
-        jdbc {
-            driver = 'org.postgresql.Driver'
-            url = System.getenv('POSTGRES_URL') ?: 'jdbc:postgresql://localhost:5432/postgres'
-            user = System.getenv('POSTGRES_USER') ?: 'admin'
-            password = System.getenv('POSTGRES_PASSWORD') ?: 'admin'
+static String toAsciiUnicode(String text) {
+    def sb = new StringBuilder()
+    text.each { c ->
+        if ((int) c > 127) {
+            sb.append(String.format('\\u%04x', (int) c))
+        } else {
+            sb.append(c)
         }
-        generator {
-            database {
-                name = 'org.jooq.meta.postgres.PostgresDatabase'
-                inputSchema = 'public'
+    }
+    return sb.toString()
+}
+
+task native2ascii {
+    group = 'build'
+    description = 'Converts messages_unicode.properties to ASCII escape sequences'
+    def inputFile = file('src/main/resources/messages_unicode.properties')
+    def outputFile = file("$buildDir/generated-resources/messages.properties")
+    inputs.file inputFile
+    outputs.file outputFile
+    doLast {
+        outputFile.parentFile.mkdirs()
+        def lines = []
+        inputFile.eachLine('UTF-8') { line ->
+            if (line.trim().isEmpty() || line.trim().startsWith('#')) {
+                lines << line
+                return
             }
-            target {
-                packageName = 'ru.minibobr.jooq'
-                directory = 'src/main/java'
+            def eq = line.indexOf('=')
+            if (eq < 0) {
+                lines << line
+                return
             }
+            def key = line.substring(0, eq)
+            def value = line.substring(eq + 1)
+            lines << "${key}=${toAsciiUnicode(value)}"
+        }
+        outputFile.text = lines.join(System.lineSeparator()) + System.lineSeparator()
+    }
+}
+
+processResources {
+    dependsOn native2ascii
+    from("$buildDir/generated-resources") {
+        include 'messages.properties'
+    }
+}
+
+task buildFrontend(type: Exec) {
+    group = 'build'
+    description = 'Builds Vue frontend into src/main/resources/static'
+    workingDir projectDir
+    commandLine 'sh', '-c', 'npm install && npm run build'
+    onlyIf { file('package.json').exists() }
+}
+
+tasks.register('compile') {
+    group = 'build'
+    description = 'Compiles Java sources'
+    dependsOn compileJava
+}
+
+jar {
+    enabled = true
+    archiveClassifier = 'plain'
+    manifest {
+        attributes(
+                'Version': version,
+                'Main-Class': mainClassName
+        )
+    }
+    dependsOn tasks.named('compile'), native2ascii
+}
+
+bootJar {
+    archiveClassifier = ''
+    manifest {
+        attributes(
+                'Version': version,
+                'Main-Class': 'org.springframework.boot.loader.launch.JarLauncher',
+                'Start-Class': mainClassName
+        )
+    }
+    dependsOn tasks.named('compile'), native2ascii, buildFrontend
+}
+
+tasks.named('build') {
+    dependsOn bootJar
+}
+
+tasks.named('test') {
+    dependsOn bootJar
+    useJUnitPlatform()
+}
+
+task installPlaywrightBrowsers {
+    group = 'verification'
+    doLast {
+        javaexec {
+            classpath = configurations.functionalTestRuntimeClasspath
+            mainClass = 'com.microsoft.playwright.CLI'
+            args 'install', '--with-deps', 'chromium'
         }
     }
 }
-*/
 
-tasks.named('test') {
+task functionalTest(type: Test) {
+    group = 'verification'
+    description = 'Runs Playwright functional tests'
+    testClassesDirs = sourceSets.functionalTest.output.classesDirs
+    classpath = sourceSets.functionalTest.runtimeClasspath
     useJUnitPlatform()
+    mustRunAfter test
+    systemProperty 'app.base.url', System.getProperty('app.base.url', System.getenv('BASE_URL') ?: 'http://localhost:8080')
+    dependsOn bootJar, installPlaywrightBrowsers, functionalTestClasses
+}
+
+tasks.named('check') {
+    dependsOn functionalTest
+}
+
+task diff {
+    group = 'versioning'
+    description = 'Commits tracked files when they change in git working copy'
+    doLast {
+        def changed = []
+        trackedClassesList.each { path ->
+            def status = ['git', 'status', '--porcelain', path].execute(null, projectDir)
+            status.waitFor()
+            if (status.text.trim()) {
+                changed << path
+            }
+        }
+        if (changed.isEmpty()) {
+            logger.lifecycle('No changes in tracked classes')
+            return
+        }
+        def add = (['git', 'add'] + changed).execute(null, projectDir)
+        add.waitFor()
+        if (add.exitValue() != 0) {
+            throw new GradleException("git add failed: ${add.err.text}")
+        }
+        def message = "Auto-commit tracked: ${changed.join(', ')}"
+        def commit = ['git', 'commit', '-m', message].execute(null, projectDir)
+        commit.waitFor()
+        if (commit.exitValue() != 0) {
+            throw new GradleException("git commit failed: ${commit.err.text}")
+        }
+        logger.lifecycle("Committed tracked files: ${changed}")
+    }
 }

@@ -3,21 +3,21 @@
     <header class="header">
       <div class="header__top">
         <div class="header__left">
-          <h1>Лабораторная работа №4</h1>
-          <span class="badge">Вариант 478265</span>
+          <h1>{{ $m('app.title') }}</h1>
+          <span class="badge">{{ $m('app.variant') }}</span>
         </div>
         <button @click="handleLogout" class="check-btn" style="width: auto;">
-          Выйти
+          {{ $m('app.logout') }}
         </button>
       </div>
-      <p class="subtitle">Полищенко Николай Николаевич · P3212</p>
+      <p class="subtitle">{{ $m('app.subtitle') }}</p>
     </header>
 
     <main class="content">
-      <section class="graph card" aria-label="График">
+      <section class="graph card" :aria-label="$m('app.graph.label')">
         <div class="graph__frame">
           <svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"
-               role="img" aria-label="Система координат"
+               role="img" :aria-label="$m('app.graph.coords')"
                id="svg" @click="handleSvgClick" @mousemove="handleSvgMouseMove">
             <defs>
               <linearGradient id="gradArea" x1="0" y1="0" x2="1" y2="1">
@@ -83,22 +83,22 @@
 
         <div class="stats-container" style="margin-top: 15px; display: flex; gap: 20px; justify-content: center;">
           <span class="badge" style="background: var(--success); color: white;">
-            Попаданий: {{ stats.hits }}
+            {{ $m('app.stats.hits') }} {{ stats.hits }}
           </span>
           <span class="badge" style="background: var(--danger); color: white;">
-            Промахов: {{ stats.misses }}
+            {{ $m('app.stats.misses') }} {{ stats.misses }}
           </span>
         </div>
       </section>
 
       <aside class="controls card" aria-label="Форма ввода">
-        <div class="section-title">Параметры</div>
+        <div class="section-title">{{ $m('app.params') }}</div>
 
         <div class="field">
           <div class="label"><strong>X</strong></div>
           <div class="select-wrapper">
             <select v-model="x" class="custom-select">
-              <option :value="null" disabled>Выберите X</option>
+              <option :value="null" disabled>{{ $m('app.select.x') }}</option>
               <option v-for="val in xValues" :key="val" :value="val">
                 {{ val }}
               </option>
@@ -114,7 +114,7 @@
                 v-model.number="y"
                 type="text"
                 class="y-input custom-input"
-                placeholder="От -5 до 5"
+                :placeholder="$m('app.y.placeholder')"
                 @input="validateY"
             />
             <div v-if="yError" class="error-message">{{ yError }}</div>
@@ -125,7 +125,7 @@
           <div class="label"><strong>R</strong></div>
           <div class="select-wrapper">
             <select v-model="r" class="custom-select">
-              <option :value="null" disabled>Выберите R</option>
+              <option :value="null" disabled>{{ $m('app.select.r') }}</option>
               <option v-for="val in rValues" :key="val" :value="val">
                 {{ val }}
               </option>
@@ -135,7 +135,7 @@
 
         <div class="actions">
           <button @click="checkPoint" class="check-btn" :disabled="loading">
-            {{ loading ? 'Проверка...' : 'Проверить' }}
+            {{ loading ? $m('app.check.loading') : $m('app.check.button') }}
           </button>
         </div>
       </aside>
@@ -148,8 +148,8 @@
           <th>X</th>
           <th>Y</th>
           <th>R</th>
-          <th>Результат</th>
-          <th>Время</th>
+          <th>{{ $m('app.result') }}</th>
+          <th>{{ $m('app.time') }}</th>
         </tr>
         </thead>
         <tbody>
@@ -159,7 +159,7 @@
           <td>{{ point.r }}</td>
           <td>
               <span :class="point.hit ? 'tag-yes' : 'tag-no'">
-                {{ point.hit ? 'Попадание' : 'Промах' }}
+                {{ point.hit ? $m('app.hit') : $m('app.miss') }}
               </span>
           </td>
           <td>{{ point.formattedTime }}</td>
@@ -169,14 +169,14 @@
 
       <div class="pagination">
         <button @click="previousPage" class="pagination-btn" :disabled="currentPage === 0">
-          Предыдущая
+          {{ $m('app.page.prev') }}
         </button>
-        <span>Стр. {{ currentPage + 1 }} из {{ totalPages || 1 }}</span>
+        <span>{{ $m('app.page.label') }} {{ currentPage + 1 }} {{ $m('app.page.of') }} {{ totalPages || 1 }}</span>
         <button @click="nextPage" class="pagination-btn" :disabled="isLastPage">
-          Следующая
+          {{ $m('app.page.next') }}
         </button>
         <button @click="clearPoints" class="pagination-btn" style="margin-left: auto;">
-          Очистить
+          {{ $m('app.page.clear') }}
         </button>
       </div>
     </section>
@@ -247,11 +247,11 @@ export default {
         return false;
       }
       if (isNaN(val)) {
-        this.yError = 'Y должен быть числом';
+        this.yError = this.$m('app.y.error.number');
         return false;
       }
       if (val < -5 || val > 5) {
-        this.yError = 'Y должен быть в диапазоне от -5 до 5';
+        this.yError = this.$m('app.y.error.range');
         return false;
       }
       this.yError = '';
@@ -266,7 +266,7 @@ export default {
           misses: response.data.misses || 0
         };
       } catch (error) {
-        console.error('Ошибка при загрузке статистики:', error);
+        console.error(this.$m('app.error.stats'), error);
       }
     },
 
@@ -284,20 +284,20 @@ export default {
 
     async checkPoint() {
       if (this.x === null) {
-        alert('Пожалуйста, выберите значение X');
+        alert(this.$m('app.alert.select.x'));
         return;
       }
       if (this.r === null) {
-        alert('Пожалуйста, выберите значение R');
+        alert(this.$m('app.alert.select.r'));
         return;
       }
       if (this.y === null || this.y === '') {
-        alert('Пожалуйста, введите значение Y');
+        alert(this.$m('app.alert.enter.y'));
         return;
       }
 
       if (!this.validateY()) {
-        alert(this.yError || 'Некорректное значение Y');
+        alert(this.yError || this.$m('app.alert.invalid.y'));
         return;
       }
 
@@ -313,7 +313,7 @@ export default {
         this.currentPage = 0;
         await this.fetchStats();
       } catch (error) {
-        let errorMsg = 'Ошибка при проверке точки';
+        let errorMsg = this.$m('app.error.check');
         if (error.response && error.response.data) {
           if (typeof error.response.data === 'object') {
             errorMsg = error.response.data.message || error.response.data.error || JSON.stringify(error.response.data);
@@ -352,10 +352,6 @@ export default {
         }
       }
 
-      this.pointerX = svgCenterX + (snappedX / Math.abs(this.r)) * (Math.abs(this.r) * 50);
-      this.pointerY = svgCenterY - (mathY / Math.abs(this.r)) * (Math.abs(this.r) * 50);
-
-      // Упрощаем:
       this.pointerX = svgCenterX + snappedX * 50;
       this.pointerY = svgCenterY - mathY * 50;
 
@@ -363,7 +359,7 @@ export default {
     },
     async handleSvgClick(event) {
       if (!this.r) {
-        alert('Сначала выберите значение R из списка');
+        alert(this.$m('app.alert.select.r.first'));
         return;
       }
 
@@ -407,14 +403,14 @@ export default {
       if (!this.isLastPage) this.currentPage++;
     },
     async clearPoints() {
-      if (!confirm('Вы уверены, что хотите очистить все результаты?')) return;
+      if (!confirm(this.$m('app.confirm.clear'))) return;
       try {
         await axios.delete('/api/points', { withCredentials: true });
         this.points = [];
         this.currentPage = 0;
         this.stats = { hits: 0, misses: 0 };
       } catch (error) {
-        alert('Ошибка при очистке результатов');
+        alert(this.$m('app.error.clear'));
       }
     },
     async handleLogout() {
@@ -430,7 +426,6 @@ export default {
 </script>
 
 <style scoped>
-/*cтили для селекта и инпута*/
 .custom-select, .custom-input {
   width: 100%;
   padding: 10px 14px;
