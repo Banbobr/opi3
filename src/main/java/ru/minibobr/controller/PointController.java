@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/points")
-@CrossOrigin(origins = "*")
 public class PointController {
     private final PointService pointService;
     private final PointJooqService pointJooqService;
@@ -36,7 +35,7 @@ public class PointController {
     public ResponseEntity<?> checkPoint(@Valid @RequestBody PointRequest request, HttpSession session) {
         User user = getCurrentUser(session);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         Point point = new Point();
@@ -63,7 +62,7 @@ public class PointController {
             HttpSession session) {
         User user = getCurrentUser(session);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         Page<Point> pointsPage = pointService.getUserPointsPaginated(user, page, size);
@@ -83,7 +82,7 @@ public class PointController {
     public ResponseEntity<?> getAllPoints(HttpSession session) {
         User user = getCurrentUser(session);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         List<Point> points = pointService.getUserPoints(user);
@@ -98,7 +97,7 @@ public class PointController {
     public ResponseEntity<?> clearPoints(HttpSession session) {
         User user = getCurrentUser(session);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         pointService.clearUserPoints(user);
