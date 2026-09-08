@@ -140,7 +140,7 @@ tasks.register('diff') {
         def paths = parameter('trackedClasses').split(',').collect { it.trim() }.findAll { it }
         def changed = paths.findAll { git(['status', '--porcelain', '--', it]) }
         if (changed.empty) {
-            logger.lifecycle('No changes in configured classes')
+            logger.lifecycle('нет изменений')
             return
         }
         git(['add', '--'] + changed)
