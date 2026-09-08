@@ -11,7 +11,3 @@ export async function loadMessages() {
 export function getMessage(key) {
   return messages[key] || key;
 }
-
-export function getMessages() {
-  return messages;
-}

@@ -5,10 +5,10 @@ import lombok.Data;
 
 @Data
 public class RegisterRequest {
-    @NotBlank(message = "Username is required")
+    @NotBlank(message = "{validation.username.required}")
     private String username;
 
-    @NotBlank(message = "Password is required")
+    @NotBlank(message = "{validation.password.required}")
     private String password;
 }
 

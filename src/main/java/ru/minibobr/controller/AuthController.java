@@ -13,18 +13,19 @@ import ru.minibobr.dto.LoginRequest;
 import ru.minibobr.dto.RegisterRequest;
 import ru.minibobr.models.User;
 import ru.minibobr.service.AuthService;
+import ru.minibobr.service.MessageService;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
-//@CrossOrigin(origins = "*")
 public class AuthController {
     private final AuthService authService;
+    private final MessageService messages;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, MessageService messages) {
+        this.messages = messages;
         this.authService = authService;
     }
 
@@ -32,9 +33,9 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         boolean success = authService.register(request.getUsername(), request.getPassword());
         if (success) {
-            return ResponseEntity.ok(new AuthResponse(true, "Registration successful", null));
+            return ResponseEntity.ok(new AuthResponse(true, messages.get("auth.register.success"), null));
         } else {
-            return ResponseEntity.badRequest().body(new AuthResponse(false, "Username already exists", null));
+            return ResponseEntity.badRequest().body(new AuthResponse(false, messages.get("auth.register.duplicate"), null));
         }
     }
 
@@ -54,25 +55,25 @@ public class AuthController {
                     SecurityContextHolder.getContext());
             session.setAttribute("user", user);
 
-            return ResponseEntity.ok(new AuthResponse(true, "Login successful", session.getId()));
+            return ResponseEntity.ok(new AuthResponse(true, messages.get("auth.login.success"), session.getId()));
         } else {
-            return ResponseEntity.status(401).body(new AuthResponse(false, "Invalid credentials", null));
+            return ResponseEntity.status(401).body(new AuthResponse(false, messages.get("auth.login.invalid"), null));
         }
     }
 
     @PostMapping("/logout")
     public ResponseEntity<AuthResponse> logout(HttpSession session) {
         session.invalidate();
-        return ResponseEntity.ok(new AuthResponse(true, "Logout successful", null));
+        return ResponseEntity.ok(new AuthResponse(true, messages.get("auth.logout.success"), null));
     }
 
     @GetMapping("/check")
     public ResponseEntity<AuthResponse> checkAuth(HttpSession session) {
         User user = (User) session.getAttribute("user");
         if (user != null) {
-            return ResponseEntity.ok(new AuthResponse(true, "Authenticated", session.getId()));
+            return ResponseEntity.ok(new AuthResponse(true, messages.get("auth.authenticated"), session.getId()));
         } else {
-            return ResponseEntity.status(401).body(new AuthResponse(false, "Not authenticated", null));
+            return ResponseEntity.status(401).body(new AuthResponse(false, messages.get("auth.unauthenticated"), null));
         }
     }
 }

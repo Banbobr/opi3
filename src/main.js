@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
 import { loadMessages, getMessage } from './messages';
+import './styles.css';
 
 async function bootstrap() {
   try {

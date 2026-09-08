@@ -1,1 +1,9 @@
-rootProject.name = 'web4'
+pluginManagement {
+    def parameters = new Properties()
+    file('build.properties').withInputStream { parameters.load(it) }
+    plugins {
+        id 'org.springframework.boot' version parameters.getProperty('springBootVersion')
+        id 'io.spring.dependency-management' version parameters.getProperty('dependencyManagementVersion')
+    }
+}
+rootProject.name = 'opi3'

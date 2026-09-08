@@ -20,11 +20,15 @@ public class MessageService {
         this.messageSource = messageSource;
     }
 
+    public String get(String key) {
+        return messageSource.getMessage(key, null, java.util.Locale.getDefault());
+    }
+
     public Map<String, String> getAllMessages() {
         Properties properties = loadProperties();
         Map<String, String> messages = new LinkedHashMap<>();
         for (String key : properties.stringPropertyNames()) {
-            messages.put(key, messageSource.getMessage(key, null, key, java.util.Locale.getDefault()));
+            messages.put(key, get(key));
         }
         return messages;
     }
@@ -32,9 +36,8 @@ public class MessageService {
     private Properties loadProperties() {
         Properties properties = new Properties();
         try (InputStream input = getClass().getClassLoader().getResourceAsStream("messages.properties")) {
-            if (input != null) {
-                properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
-            }
+            if (input == null) throw new IllegalStateException("Missing messages.properties");
+            properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new IllegalStateException("Unable to load messages.properties", e);
         }

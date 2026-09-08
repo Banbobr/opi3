@@ -1,32 +1,27 @@
-FROM node:18-alpine AS frontend-build
-WORKDIR /app
+FROM node:22-bookworm-slim AS node
 
-COPY package.json package-lock.json* ./
-RUN npm install
-
-COPY vite.config.js ./
-COPY index.html ./
-COPY src ./src
-
-RUN npm run build
-
-FROM gradle:8.10-jdk17 AS build
-WORKDIR /app
-
-COPY build.gradle settings.gradle build.properties ./
+FROM gradle:8.10-jdk17 AS toolchain
+USER root
+COPY --from=node /usr/local/ /usr/local/
+WORKDIR /workspace
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY build.gradle settings.gradle build.properties gradlew ./
 COPY gradle ./gradle
-COPY gradlew ./
 
+FROM toolchain AS build
+COPY vite.config.js index.html ./
 COPY src ./src
+RUN chmod +x gradlew && ./gradlew bootJar -x npmCi --no-daemon
 
-COPY --from=frontend-build /app/src/main/resources/static ./src/main/resources/static
+FROM toolchain AS test
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
+RUN ./gradlew installPlaywrightBrowsers -PplaywrightWithDeps=true --no-daemon
+COPY --from=build /workspace/ /workspace/
+CMD ["./gradlew", "test", "functionalTest", "-x", "npmCi", "--no-daemon", "--rerun-tasks"]
 
-RUN chmod +x gradlew && ./gradlew clean build -x test -x functionalTest -x buildFrontend --no-daemon
-
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:17-jre AS runtime
 WORKDIR /app
-
-COPY --from=build /app/build/libs/*.jar app.jar
-
+COPY --from=build /workspace/build/libs/app.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

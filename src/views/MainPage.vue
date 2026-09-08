@@ -91,7 +91,7 @@
         </div>
       </section>
 
-      <aside class="controls card" aria-label="Форма ввода">
+      <aside class="controls card" :aria-label="$m('app.controls.label')">
         <div class="section-title">{{ $m('app.params') }}</div>
 
         <div class="field">
@@ -111,7 +111,7 @@
           <div class="input-wrap">
             <input
                 id="y-input"
-                v-model.number="y"
+                v-model="y"
                 type="text"
                 class="y-input custom-input"
                 :placeholder="$m('app.y.placeholder')"
@@ -141,7 +141,7 @@
       </aside>
     </main>
 
-    <section class="results card" aria-label="Результаты">
+    <section class="results card" :aria-label="$m('app.results.label')">
       <table class="result-table">
         <thead>
         <tr>
@@ -198,7 +198,6 @@ export default {
       points: [],
       currentPage: 0,
       pageSize: 10,
-      totalPages: 0,
       loading: false,
       pointerX: 250,
       pointerY: 250,
@@ -208,6 +207,9 @@ export default {
     };
   },
   computed: {
+    totalPages() {
+      return Math.ceil(this.points.length / this.pageSize);
+    },
     rScaled() {
       if (!this.r) return 100;
       return Math.abs(this.r) * 50;
@@ -231,9 +233,6 @@ export default {
     },
     y() {
       this.validateY();
-    },
-    points() {
-      this.totalPages = Math.ceil(this.points.length / this.pageSize);
     }
   },
   mounted() {
@@ -241,12 +240,12 @@ export default {
   },
   methods: {
     validateY() {
-      const val = parseFloat(this.y);
+      const val = Number(this.y);
       if (this.y === '' || this.y === null) {
         this.yError = '';
         return false;
       }
-      if (isNaN(val)) {
+      if (!Number.isFinite(val)) {
         this.yError = this.$m('app.y.error.number');
         return false;
       }
@@ -326,35 +325,19 @@ export default {
         this.loading = false;
       }
     },
+    graphCoordinates(event) {
+      const position = new DOMPoint(event.clientX, event.clientY)
+          .matrixTransform(event.currentTarget.getScreenCTM().inverse());
+      const rawX = (position.x - 250) / 50;
+      const x = this.xValues.reduce((nearest, value) =>
+          Math.abs(value - rawX) < Math.abs(nearest - rawX) ? value : nearest);
+      return { x, y: Number(((250 - position.y) / 50).toFixed(3)) };
+    },
     handleSvgMouseMove(event) {
       if (!this.r) return;
-
-      const svg = document.getElementById('svg');
-      const rect = svg.getBoundingClientRect();
-      const svgX = event.clientX - rect.left;
-      const svgY = event.clientY - rect.top;
-
-      const svgCenterX = 250;
-      const svgCenterY = 250;
-
-      const mathX = (svgX - 250) / 50;
-      let mathY = (250 - svgY) / 50;
-
-      mathY = Math.max(-5, Math.min(5, mathY));
-
-      let snappedX = this.xValues[0];
-      let bestDist = Math.abs(this.xValues[0] - mathX);
-      for (let i = 1; i < this.xValues.length; i++) {
-        const dist = Math.abs(this.xValues[i] - mathX);
-        if (dist < bestDist) {
-          bestDist = dist;
-          snappedX = this.xValues[i];
-        }
-      }
-
-      this.pointerX = svgCenterX + snappedX * 50;
-      this.pointerY = svgCenterY - mathY * 50;
-
+      const { x, y } = this.graphCoordinates(event);
+      this.pointerX = 250 + x * 50;
+      this.pointerY = 250 - y * 50;
       this.pointerVisible = true;
     },
     async handleSvgClick(event) {
@@ -362,33 +345,10 @@ export default {
         alert(this.$m('app.alert.select.r.first'));
         return;
       }
-
-      const svg = document.getElementById('svg');
-      const rect = svg.getBoundingClientRect();
-      const svgX = event.clientX - rect.left;
-      const svgY = event.clientY - rect.top;
-
-      const svgCenterX = 250;
-      const svgCenterY = 250;
-
-      const mathXRaw = (svgX - svgCenterX) / 50;
-      const mathYRaw = (svgCenterY - svgY) / 50;
-
-      let snappedX = this.xValues[0];
-      let bestDist = Math.abs(this.xValues[0] - mathXRaw);
-      for (let i = 1; i < this.xValues.length; i++) {
-        const dist = Math.abs(this.xValues[i] - mathXRaw);
-        if (dist < bestDist) {
-          bestDist = dist;
-          snappedX = this.xValues[i];
-        }
-      }
-
-      this.x = snappedX;
-      this.y = parseFloat(mathYRaw.toFixed(3));
-
-      this.checkPoint();
-      await this.fetchStats();
+      const { x, y } = this.graphCoordinates(event);
+      this.x = x;
+      this.y = y;
+      await this.checkPoint();
     },
     getPointX(point) {
       return 250 + parseFloat(point.x) * 50;

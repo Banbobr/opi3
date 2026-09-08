@@ -9,19 +9,19 @@ import java.math.BigDecimal;
 
 @Data
 public class PointRequest {
-    @NotNull(message = "X is required")
-    @DecimalMin(value = "-4", message = "X must be between -4 and 4")
-    @DecimalMax(value = "4", message = "X must be between -4 and 4")
+    @NotNull(message = "{validation.x.required}")
+    @DecimalMin(value = "-4", message = "{validation.x.range}")
+    @DecimalMax(value = "4", message = "{validation.x.range}")
     private BigDecimal x;
 
-    @NotNull(message = "Y is required")
-    @DecimalMin(value = "-5", message = "Y must be between -5 and 5")
-    @DecimalMax(value = "5", message = "Y must be between -5 and 5")
+    @NotNull(message = "{validation.y.required}")
+    @DecimalMin(value = "-5", message = "{validation.y.range}")
+    @DecimalMax(value = "5", message = "{validation.y.range}")
     private BigDecimal y;
 
-    @NotNull(message = "R is required")
-    @DecimalMin(value = "1", message = "R must be between 1 and 4")
-    @DecimalMax(value = "4", message = "R must be between 1 and 4")
+    @NotNull(message = "{validation.r.required}")
+    @DecimalMin(value = "1", message = "{validation.r.range}")
+    @DecimalMax(value = "4", message = "{validation.r.range}")
     private BigDecimal r;
 }
 

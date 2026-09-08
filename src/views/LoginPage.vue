@@ -59,12 +59,16 @@ export default {
       username: '',
       password: '',
       error: '',
-      loading: false
+      loading: false,
+      clockTimer: null
     };
   },
   mounted() {
     this.updateClock();
-    setInterval(this.updateClock, 11000);
+    this.clockTimer = setInterval(this.updateClock, 11000);
+  },
+  beforeUnmount() {
+    clearInterval(this.clockTimer);
   },
   methods: {
     updateClock() {

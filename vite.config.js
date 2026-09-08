@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 export default defineConfig({
   plugins: [vue()],
   build: {
-    outDir: path.resolve(__dirname, 'src/main/resources/static'),
+    outDir: path.resolve(__dirname, 'build/frontend'),
     emptyOutDir: true
   },
   resolve: {
