@@ -125,7 +125,6 @@ tasks.register('functionalTest', Test) {
 }
 check { dependsOn 'functionalTest' }
 
-// Limit the commit to configured paths, preserving unrelated staged changes.
 tasks.register('diff') {
     group = 'versioning'
     doLast {

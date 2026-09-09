@@ -68,17 +68,18 @@ abstract class FunctionalTestSupport {
                 .timeout(Duration.ofSeconds(2)).GET().build();
         while (System.nanoTime() < deadline) {
             if (application != null && !application.isAlive()) {
-                throw new AssertionError("Application exited. See " + System.getProperty("app.log"));
+                throw new AssertionError("Приложение завершилось. Смотрите лог: "
+                        + System.getProperty("app.log"));
             }
             try {
                 var response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() == 200 && response.body().contains("app.title")) return;
             } catch (java.io.IOException ignored) {
-                // The server may still be starting; retry until the deadline.
+                // Сервер может ещё запускаться; повторяем попытки до истечения времени.
             }
             Thread.sleep(250);
         }
-        throw new AssertionError("Application did not become ready at " + baseUrl);
+        throw new AssertionError("Приложение не стало готово по адресу " + baseUrl);
     }
 
     @BeforeEach

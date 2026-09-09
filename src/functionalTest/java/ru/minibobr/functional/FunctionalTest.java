@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class Web4FunctionalTest extends FunctionalTestSupport {
+class FunctionalTest extends FunctionalTestSupport {
     @Test
     void case01_registration() {
         register(uniqueUser());
